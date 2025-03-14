@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Letter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class LetterController extends Controller
 {
@@ -37,11 +38,11 @@ class LetterController extends Controller
         }
 
         $query->orderBy('created_at', $sort);
-        $letters = $query->get();
+        $letters = $query->with('user')->get();
 
         return response()->json([
             'status' => true,
-            'message' => 'Seluruh surat!',
+            'message' => 'Menampilkan seluruh surat',
             'data' => [
                 'total_letters' => $allLetters,
                 'incoming' => $allIncomingLetters,
@@ -64,15 +65,15 @@ class LetterController extends Controller
             'sender' => 'required',
             'recepient' => 'required',
             'letter_link' => 'required|active_url',
-            'created_by' => 'required'
         ]);
 
         // $request['letter_date'] = Carbon::createFromFormat('d-m-Y', $request['letter_date'])->format('Y-m-d');
+        $request['created_by'] = Auth::user()->id;
         $letter = Letter::create($request->all());
 
         return response()->json([
             'status' => true,
-            'message' => 'Berhasil menambahkan surat!',
+            'message' => 'Berhasil menambahkan surat',
             'data' => $letter
         ]);
     }
@@ -82,7 +83,7 @@ class LetterController extends Controller
      */
     public function show(string $id)
     {
-        $letter = Letter::find($id);
+        $letter = Letter::where('id', $id)->with('user')->get();
 
         if (!$letter) {
             return response()->json([
@@ -93,7 +94,7 @@ class LetterController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Mendapatkan detail Surat!',
+            'message' => 'Mendapatkan detail Surat',
             'data' => $letter
         ]);
     }
@@ -120,14 +121,13 @@ class LetterController extends Controller
             'sender' => 'sometimes|required',
             'recepient' => 'sometimes|required',
             'letter_link' => 'sometimes|required|active_url',
-            'created_by' => 'sometimes|required'
         ]);
 
         $letter->update($request->all());
 
         return response()->json([
             'status' => true,
-            'message' => 'Surat berhasil diperbarui!',
+            'message' => 'Surat berhasil diperbarui',
             'data' => $letter
         ]);
     }
@@ -146,11 +146,18 @@ class LetterController extends Controller
             ], 404);
         }
 
+        if ($letter['created_by'] != Auth::user()->id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Tidak memiliki akses untuk menghapus surat ini'
+            ], 404);
+        }
+
         $letter->delete();
 
         return response()->json([
             'status' => true,
-            'message' => 'Menghapus surat!'
+            'message' => 'Berhasil menghapus surat'
         ]);
     }
 }

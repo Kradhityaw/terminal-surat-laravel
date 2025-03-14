@@ -36,6 +36,7 @@ class AuthController extends Controller
     public function user()
     {
         $getUser = Auth::user();
+        $letters = $getUser->letters;
 
         if (!$getUser) {
             return response()->json([
@@ -47,7 +48,10 @@ class AuthController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Berhasil mendapatkan data user!',
-            'data' => $getUser
+            'data' => [
+                'user' => $getUser,
+                'letters' => $letters
+            ]
         ]);
     }
 
