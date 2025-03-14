@@ -17,7 +17,7 @@ class AuthController extends Controller
 
         if (Auth::attempt($request->only('email', 'password'))) {
             $user = Auth::user();
-            $token = $user->createToken('api-token')->plainTextToken;
+            $token = $user->createToken('api-token', ['*'], now()->addHours(24))->plainTextToken;
 
             return response()->json([
                 'status' => true,
@@ -53,8 +53,8 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->tokens()->delete();
         $request->user()->currentAccessToken()->delete();
+        $request->user()->tokens()->delete();
 
         return response()->json([
             'message' => 'Berhasil logout!',
